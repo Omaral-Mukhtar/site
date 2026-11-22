@@ -35,7 +35,22 @@ jobs:
       - name: Run tests with LCOV coverage
         run: npm run test:coverage
 
+      - name: Check SonarQube configuration
+        id: sonar-config
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          if [ -n "$SONAR_TOKEN" ] && [ -n "$SONAR_HOST_URL" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::SONAR_TOKEN and SONAR_HOST_URL repository secrets are not configured; SonarQube analysis was skipped."
+          fi
+
       - name: SonarQube analysis
+        if: steps.sonar-config.outputs.ready == 'true'
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
